@@ -10,16 +10,26 @@
     <div class="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl w-full max-w-xl">
         <h1 class="text-2xl font-bold mb-6 text-blue-400">Tambah Data Monitoring Baru</h1>
         
-        <form action="{{ route('dashboard.store') }}" method="POST" class="space-y-6">
+        <form action="{{ route('admin.crud.store') }}" method="POST" class="space-y-6">
             @csrf
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @for ($i = 1; $i <= 5; $i++)
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Gauge {{ $i }}</label>
-                        <input type="number" step="0.01" name="gauge{{ $i }}" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
-                    </div>
-                @endfor
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Suhu (°C)</label>
+                    <input type="number" step="0.01" name="gauge1" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Volume Air (ml)</label>
+                    <input type="number" step="0.01" name="gauge2" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Kekeruhan Air (NTU)</label>
+                    <input type="number" step="0.01" name="gauge3" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Kualitas Air (%)</label>
+                    <input type="number" step="0.01" name="gauge4" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                </div>
             </div>
 
             <div>

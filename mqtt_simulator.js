@@ -14,9 +14,9 @@ client.on('connect', () => {
     setInterval(() => {
         // Bikin data random biar keliatan real-time
         const dummyData = {
-            suhu: (20 + Math.random() * 15).toFixed(1),      // 20 - 35 C
-            volume: Math.floor(400 + Math.random() * 600),   // 400 - 1000 ml
-            kekeruhan: Math.floor(Math.random() * 100),      // 0 - 100 NTU
+            suhu: (0 + Math.random() * 35).toFixed(1),      // 20 - 35 C
+            volume: Math.floor(0 + Math.random() * 600),   // 400 - 1000 ml
+            kekeruhan: Math.floor(Math.random() * 150),      // 0 - 150 NTU
             rssi: Math.floor(-70 + Math.random() * 20),      // -70 sampe -50 dBm
             status: "Online"
         };
@@ -25,7 +25,7 @@ client.on('connect', () => {
         client.publish(TOPIC, payload);
 
         console.log(`📩 Terkirim: ${payload}`);
-    }, 100); // 3000ms = 3 detik
+    }, 1000); // 1000ms = 1 detik
 });
 
 client.on('error', (err) => {

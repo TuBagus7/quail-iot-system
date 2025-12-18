@@ -3,29 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\ItemDashboard;
+use App\Models\ModelKandang; // Pake nama model yang baru ya Bang
 use Illuminate\Http\Request;
 
-class KontrolerDashboard extends Controller
+class KontrolerKandang extends Controller
 {
-    // Halaman utama buat user liat dashboard
+    // Halaman utama buat publik (liat dashboard real-time)
     public function index()
     {
-        $semua_data = ItemDashboard::all();
-        return view('dashboard', compact('semua_data'));
+        // Tetep ambil data buat jaga-jaga kalau mau ditampilin list-nya
+        $semua_data = ModelKandang::all();
+        return view('publik.tampilan_utama', compact('semua_data'));
     }
 
     // Halaman khusus admin buat liat semua data (overview)
     public function adminIndex()
     {
-        $semua_data = ItemDashboard::all();
-        return view('admin.dashboard', compact('semua_data'));
+        $semua_data = ModelKandang::orderBy('created_at', 'desc')->get();
+        return view('admin.beranda_admin', compact('semua_data'));
     }
 
-    // Form buat nambah data baru
+    // Form buat nambah data baru (khusus admin)
     public function create()
     {
-        return view('dashboard.tambah');
+        return view('admin.tambah_data');
     }
 
     // Fungsi buat simpan data ke database
@@ -36,21 +37,20 @@ class KontrolerDashboard extends Controller
             'gauge2' => 'required|numeric',
             'gauge3' => 'required|numeric',
             'gauge4' => 'required|numeric',
-            'gauge5' => 'required|numeric',
             'item_teks' => 'required|string',
             'status_buzzer' => 'required|boolean',
         ]);
 
-        ItemDashboard::create($validasi);
+        ModelKandang::create($validasi);
 
-        return redirect()->route('dashboard.index')->with('sukses', 'Data berhasil ditambah, mantap!');
+        return redirect()->route('admin.crud.index')->with('sukses', 'Data berhasil ditambah, mantap!');
     }
 
     // Form buat edit data yang udah ada
     public function edit($id)
     {
-        $item = ItemDashboard::findOrFail($id);
-        return view('dashboard.edit', compact('item'));
+        $item = ModelKandang::findOrFail($id);
+        return view('admin.ubah_data', compact('item'));
     }
 
     // Fungsi buat update data
@@ -61,23 +61,22 @@ class KontrolerDashboard extends Controller
             'gauge2' => 'required|numeric',
             'gauge3' => 'required|numeric',
             'gauge4' => 'required|numeric',
-            'gauge5' => 'required|numeric',
             'item_teks' => 'required|string',
             'status_buzzer' => 'required|boolean',
         ]);
 
-        $item = ItemDashboard::findOrFail($id);
+        $item = ModelKandang::findOrFail($id);
         $item->update($validasi);
 
-        return redirect()->route('dashboard.index')->with('sukses', 'Data udah diupdate ya!');
+        return redirect()->route('admin.crud.index')->with('sukses', 'Data udah diupdate ya!');
     }
 
     // Fungsi buat hapus data
     public function destroy($id)
     {
-        $item = ItemDashboard::findOrFail($id);
+        $item = ModelKandang::findOrFail($id);
         $item->delete();
 
-        return redirect()->route('dashboard.index')->with('sukses', 'Data udah dihapus, bersih!');
+        return redirect()->route('admin.crud.index')->with('sukses', 'Data udah dihapus, bersih!');
     }
 }
