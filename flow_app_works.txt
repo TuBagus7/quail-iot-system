@@ -1,0 +1,134 @@
+📊 Dashboard with MQTT Integration
+🎯 Goal Description
+
+Membuat web dashboard di aplikasi Laravel dengan fitur:
+
+✅ CRUD untuk monitoring data
+
+🔒 Admin-only view untuk overview data
+
+⚡ Real-time UI menggunakan mqtt.js, menampilkan:
+
+5 ⏱️ gauges
+
+1 📝 text item
+
+1 🎚️ slider button untuk aktif/mati buzzer
+
+🛠️ Proposed Changes
+Backend (Laravel)
+
+1. Routes
+
+routes/web.php
+
+Tambahkan routes untuk dashboard CRUD:
+
+/dashboard
+
+/dashboard/create
+
+/dashboard/{id}/edit
+
+dll.
+
+Tambahkan routes admin dengan middleware auth dan can:admin (misal: /admin/dashboard).
+
+2. Controller
+
+app/Http/Controllers/DashboardController.php (baru)
+
+Implementasi method: index, create, store, edit, update, destroy
+
+Return Blade views sesuai kebutuhan
+
+3. Model
+
+app/Models/DashboardItem.php (baru)
+
+Definisikan fillable fields untuk data gauges
+
+4. Migration
+
+create_dashboard_items_table.php
+
+Buat tabel dengan kolom untuk setiap gauge, text field, dan status buzzer 🎚️
+
+5. Broadcasting Config
+
+config/broadcasting.php
+
+Tambahkan konfigurasi MQTT broker: host 🌐, port 🔌, username 👤, password 🔑
+
+6. Views
+
+resources/views/dashboard.blade.php
+
+Sertakan compiled JS bundle
+
+Layout untuk gauges ⏱️, text 📝, dan slider 🎚️
+
+resources/views/admin/dashboard.blade.php
+
+UI sama seperti dashboard, tapi dengan tombol edit ✏️ / delete 🗑️
+
+Frontend (JavaScript)
+
+1. Dashboard JS
+
+resources/js/dashboard.js (baru)
+
+Import mqtt (npm install mqtt)
+
+Connect ke broker 🌐, subscribe ke topic untuk setiap gauge ⏱️
+
+Update DOM saat pesan MQTT diterima ⚡
+
+Publish ke buzzer/control saat slider diubah 🎚️
+
+2. Admin JS
+
+resources/js/admin.js (baru)
+
+Logic MQTT sama seperti dashboard
+
+Tambahkan AJAX calls untuk CRUD 📝
+
+3. Package & Build
+
+package.json
+
+Tambahkan npm run dev untuk compile assets via Vite ⚡
+
+vite.config.js
+
+Pastikan entry points untuk dashboard.js dan admin.js
+
+✅ Verification Plan
+Automated Tests
+
+Feature tests menggunakan Laravel HTTP testing utilities 🧪
+
+tests/Feature/DashboardTest.php
+
+Verifikasi CRUD routes return 200 ✅
+
+Verifikasi middleware admin berfungsi 🔒
+
+Manual Tests (User-Facing)
+
+Jalankan Laravel server: php artisan serve 💻
+
+Buka /dashboard di browser 🌐
+
+Verifikasi 5 gauges muncul ⏱️
+
+Verifikasi text item update saat MQTT messages diterima ⚡
+
+Toggle slider 🎚️, gunakan MQTT client (misal MQTT Explorer), pastikan payload sesuai ✅
+
+Login sebagai admin 🔑, buka /admin/dashboard
+
+Verifikasi tombol edit ✏️ / delete 🗑️ muncul dan berfungsi
+
+Simulasi MQTT messages (publish ke topic gauge/1) dan pastikan gauges update real-time ⚡

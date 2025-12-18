@@ -1,0 +1,204 @@
+import mqtt from 'mqtt';
+import Highcharts from 'highcharts';
+import HighchartsMore from 'highcharts/highcharts-more';
+import SolidGauge from 'highcharts/modules/solid-gauge';
+
+// Fix buat Vite/ESM: panggil .default kalau ada, kalau gak ya panggil modulnya langsung
+try {
+    const more = HighchartsMore.default || HighchartsMore;
+    const gauge = SolidGauge.default || SolidGauge;
+    
+    if (typeof more === 'function') more(Highcharts);
+    if (typeof gauge === 'function') gauge(Highcharts);
+    
+    console.log('✅ Library Highcharts berhasil di-load!');
+} catch (e) {
+    console.error('❌ Gagal inisialisasi modul Highcharts:', e);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Dashboard Init...');
+    
+    const gaugeOptions = {
+        chart: {
+            type: 'solidgauge',
+            backgroundColor: 'transparent',
+            height: 160
+        },
+        title: null,
+        pane: {
+            center: ['50%', '85%'],
+            size: '100%',
+            startAngle: -90,
+            endAngle: 90,
+            background: {
+                backgroundColor: '#334155',
+                innerRadius: '60%',
+                outerRadius: '100%',
+                shape: 'arc',
+                borderWidth: 0
+            }
+        },
+        yAxis: {
+            min: 0,
+            max: 100,
+            stops: [
+                [0.1, '#55BF3B'], // green
+                [0.5, '#DDDF0D'], // yellow
+                [0.9, '#DF5353']  // red
+            ],
+            lineWidth: 0,
+            tickAmount: 2,
+            title: { y: -70 },
+            labels: { y: 16 }
+        },
+        plotOptions: {
+            solidgauge: {
+                dataLabels: { y: 5, borderWidth: 0, useHTML: true }
+            }
+        },
+        credits: { enabled: false },
+        series: [{
+            data: [0],
+            dataLabels: {
+                format: '<div style="text-align:center"><span style="font-size:25px;color:#f8fafc">{y}</span><br/>' +
+                        '<span style="font-size:12px;color:#94a3b8">unit</span></div>'
+            }
+        }]
+    };
+
+    // Render 4 gauge (Suhu, Volume, Kekeruhan, Kualitas)
+    const gauges = [];
+    const gaugeConfigs = [
+        { id: 'gauge-1', label: 'Suhu', max: 50, unit: '°C', inverse: false },
+        { id: 'gauge-2', label: 'Volume', max: 1000, unit: 'ml', inverse: false },
+        { id: 'gauge-3', label: 'Keruh', max: 150, unit: 'NTU', inverse: false },
+        { id: 'gauge-4', label: 'Kualitas', max: 100, unit: '%', inverse: true }
+    ];
+
+    gaugeConfigs.forEach((conf) => {
+        const el = document.getElementById(conf.id);
+        if (el) {
+            try {
+                const customStops = conf.inverse ? [
+                    [0.1, '#DF5353'], // red
+                    [0.5, '#DDDF0D'], // yellow
+                    [0.9, '#55BF3B']  // green
+                ] : [
+                    [0.1, '#55BF3B'], // green
+                    [0.5, '#DDDF0D'], // yellow
+                    [0.9, '#DF5353']  // red
+                ];
+
+                const chart = Highcharts.chart(conf.id, Highcharts.merge(gaugeOptions, {
+                    yAxis: { 
+                        min: 0, 
+                        max: conf.max,
+                        stops: customStops,
+                        title: { text: conf.label, style: { color: '#94a3b8' } } 
+                    },
+                    series: [{
+                        name: conf.label,
+                        data: [0],
+                        dataLabels: {
+                            format: `<div style="text-align:center"><span style="font-size:20px;color:#f8fafc">{y}</span><br/>` +
+                                    `<span style="font-size:10px;color:#94a3b8">${conf.unit}</span></div>`
+                        }
+                    }]
+                }));
+                gauges.push(chart);
+            } catch (err) {
+                console.error(`❌ Gagal render ${conf.id}:`, err);
+            }
+        }
+    });
+
+    // --- LOGIC STATUS NAV BAR ---
+    const updateStatusDot = (id, status) => {
+        const dot = document.getElementById(id);
+        if (!dot) return;
+        if (status === 'online') {
+            dot.classList.remove('bg-slate-500', 'bg-red-500');
+            dot.classList.add('bg-emerald-500');
+        } else if (status === 'offline') {
+            dot.classList.remove('bg-slate-500', 'bg-emerald-500');
+            dot.classList.add('bg-red-500');
+        }
+    };
+
+    // MQTT Connect
+    const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+
+    client.on('connect', () => {
+        console.log('📡 MQTT Online');
+        updateStatusDot('status-mqtt-dot', 'online');
+        client.subscribe('kandang/data');
+    });
+
+    client.on('offline', () => updateStatusDot('status-mqtt-dot', 'offline'));
+
+    let lastDeviceMessage = Date.now();
+    
+    // Cek Device Status via Timeout (Kalau gak ada kabar 10 detik = offline)
+    setInterval(() => {
+        if (Date.now() - lastDeviceMessage > 10000) {
+            updateStatusDot('status-device-dot', 'offline');
+            updateStatusDot('status-wifi-dot', 'offline');
+        }
+    }, 5000);
+
+    client.on('message', (topic, message) => {
+        if (topic === 'kandang/data') {
+            try {
+                const data = JSON.parse(message.toString());
+                lastDeviceMessage = Date.now();
+                updateStatusDot('status-device-dot', 'online');
+
+                // Update WiFi Status based on RSSI
+                if (data.rssi !== undefined) {
+                    updateStatusDot('status-wifi-dot', 'online');
+                }
+
+                // Update Gauges
+                if (data.suhu !== undefined && gauges[0]) gauges[0].series[0].points[0].update(parseFloat(data.suhu));
+                if (data.volume !== undefined && gauges[1]) gauges[1].series[0].points[0].update(parseFloat(data.volume));
+                
+                let ntu = 0;
+                if (data.kekeruhan !== undefined && gauges[2]) {
+                    ntu = parseFloat(data.kekeruhan);
+                    gauges[2].series[0].points[0].update(ntu);
+                }
+
+                // Kualitas (%) = 100 - (ntu/1.5)
+                if (gauges[3]) {
+                    let qual = 100 - (ntu / 1.5);
+                    qual = Math.max(0, Math.min(100, Math.round(qual)));
+                    gauges[3].series[0].points[0].update(qual);
+                }
+
+                // Update Kondisi Text
+                const txt = document.getElementById('item-teks');
+                if (txt) {
+                    if (ntu < 30) {
+                        txt.innerText = "💧 Air Bersih (Mantap!)";
+                        txt.className = "text-2xl font-mono animate-pulse text-emerald-400";
+                    } else if (ntu < 80) {
+                        txt.innerText = "⚠️ Air Mulai Keruh (Waspada)";
+                        txt.className = "text-2xl font-mono animate-pulse text-yellow-500";
+                    } else {
+                        txt.innerText = "🚫 Air Keruh Banget! (Ganti!)";
+                        txt.className = "text-2xl font-mono animate-pulse text-red-500";
+                    }
+                }
+
+            } catch (e) { console.error('JSON Error:', e); }
+        }
+    });
+
+    const slider = document.getElementById('buzzer-slider');
+    if (slider) {
+        slider.addEventListener('change', (e) => {
+            client.publish('kandang/control/buzzer', e.target.checked ? 'ON' : 'OFF');
+        });
+    }
+});
