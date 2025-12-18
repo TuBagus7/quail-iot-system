@@ -191,11 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                // --- UPDATE PENTING ---
-                // Setiap kali ada data masuk dari MQTT (ESP32/VSMQTT), 
-                // kita langsung lapor ke database biar Panel Admin update real-time
-                syncDataToDatabase();
-
             } catch (e) { console.error('JSON Error:', e); }
         }
     });
@@ -233,10 +228,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // AUTO-SYNC: Setiap 30 detik, dashboard bakal nyimpen data sensor ke database otomatis
-    // Ini biar ada history data di Panel Admin walaupun gak ada yang klik tombol buzzer
+    // --- PENGATURAN WAKTU SIMPAN (AUTO-SYNC) ---
+    // Ubah angka 10000 di bawah ini kalau mau ganti durasi simpan datanya.
+    // 10000 = 10 detik, 30000 = 30 detik, dst.
+    const WAKTU_SIMPAN = 10000; 
+
     setInterval(() => {
-        console.log('🔄 Melakukan sinkronisasi data otomatis ke database...');
+        console.log(`🔄 [${WAKTU_SIMPAN/1000}s] Sinkronisasi data otomatis ke database...`);
         syncDataToDatabase();
-    }, 30000); // 30000ms = 30 detik
+    }, WAKTU_SIMPAN);
 });
