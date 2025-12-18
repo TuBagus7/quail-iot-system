@@ -79,4 +79,38 @@ class KontrolerKandang extends Controller
 
         return redirect()->route('admin.crud.index')->with('sukses', 'Data udah dihapus, bersih!');
     }
+
+    /**
+     * API: Simpan Data dari ESP32 atau Web Dashboard
+     * Fungsi ini bakal nerima kiriman JSON dan langsung masukin ke DB
+     */
+    public function simpanDataDariAlat(Request $request)
+    {
+        // Kita bikin fleksibel ya Bang, bisa nerima nama 'gauge' atau nama sensor langsung
+        $data_kiriman = $request->all();
+
+        // Mapping dari nama sensor ke kolom database
+        $payload = [
+            'gauge1' => $data_kiriman['gauge1'] ?? $data_kiriman['suhu'] ?? 0,
+            'gauge2' => $data_kiriman['gauge2'] ?? $data_kiriman['volume'] ?? 0,
+            'gauge3' => $data_kiriman['gauge3'] ?? $data_kiriman['kekeruhan'] ?? 0,
+            'gauge4' => $data_kiriman['gauge4'] ?? $data_kiriman['kualitas'] ?? 0,
+            'item_teks' => $data_kiriman['item_teks'] ?? $data_kiriman['status'] ?? 'Cek Kandang',
+            'status_buzzer' => $data_kiriman['status_buzzer'] ?? ($request->has('status_buzzer') ? $data_kiriman['status_buzzer'] : 0),
+        ];
+
+        // Validasi tipis-tipis biar datanya bener angka
+        if (!is_numeric($payload['gauge1'])) $payload['gauge1'] = 0;
+        if (!is_numeric($payload['gauge2'])) $payload['gauge2'] = 0;
+        if (!is_numeric($payload['gauge3'])) $payload['gauge3'] = 0;
+        if (!is_numeric($payload['gauge4'])) $payload['gauge4'] = 0;
+
+        // Langsung hajar masukin ke database!
+        $data = ModelKandang::create($payload);
+
+        return response()->json([
+            'pesan' => 'Mantap, data udah kesimpen di database! 🚀',
+            'data_id' => $data->id
+        ], 201);
+    }
 }

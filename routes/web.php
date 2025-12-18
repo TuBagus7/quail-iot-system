@@ -25,3 +25,7 @@ Route::middleware('auth')->group(function () {
     // Halaman Beranda Admin
     Route::get('admin/beranda', [App\Http\Controllers\KontrolerKandang::class, 'adminIndex'])->name('admin.dashboard');
 });
+
+// PINTU MASUK DATA (API): Buat nyimpen data dari ESP32 atau Dashboard Web
+// Kita kasih nama rute 'api.simpan-data' ya Bang
+Route::post('api/simpan-data', [App\Http\Controllers\KontrolerKandang::class, 'simpanDataDariAlat'])->name('api.simpan-data');

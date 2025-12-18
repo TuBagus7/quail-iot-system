@@ -191,14 +191,52 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
+                // --- UPDATE PENTING ---
+                // Setiap kali ada data masuk dari MQTT (ESP32/VSMQTT), 
+                // kita langsung lapor ke database biar Panel Admin update real-time
+                syncDataToDatabase();
+
             } catch (e) { console.error('JSON Error:', e); }
         }
     });
 
     const slider = document.getElementById('buzzer-slider');
+    
+    // Fungsi buat kirim data ke database Laravel
+    const syncDataToDatabase = () => {
+        const payload = {
+            gauge1: gauges[0]?.series[0].points[0].y || 0,
+            gauge2: gauges[1]?.series[0].points[0].y || 0,
+            gauge3: gauges[2]?.series[0].points[0].y || 0,
+            gauge4: gauges[3]?.series[0].points[0].y || 0,
+            item_teks: document.getElementById('item-teks')?.innerText || "Status Oke",
+            status_buzzer: slider?.checked ? 1 : 0
+        };
+
+        fetch('/api/simpan-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => console.log('✅ Data tersinkron ke DB:', data))
+        .catch(err => console.error('❌ Gagal sinkron ke DB:', err));
+    };
+
     if (slider) {
         slider.addEventListener('change', (e) => {
-            client.publish('kandang/control/buzzer', e.target.checked ? 'ON' : 'OFF');
+            const status = e.target.checked ? 'ON' : 'OFF';
+            client.publish('kandang/control/buzzer', status);
+            
+            // Pas buzzer diubah, langsung lapor ke database biar dicatet
+            syncDataToDatabase();
         });
     }
+
+    // AUTO-SYNC: Setiap 30 detik, dashboard bakal nyimpen data sensor ke database otomatis
+    // Ini biar ada history data di Panel Admin walaupun gak ada yang klik tombol buzzer
+    setInterval(() => {
+        console.log('🔄 Melakukan sinkronisasi data otomatis ke database...');
+        syncDataToDatabase();
+    }, 30000); // 30000ms = 30 detik
 });

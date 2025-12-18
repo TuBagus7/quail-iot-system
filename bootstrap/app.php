@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
             guests: '/masuk',
             users: '/admin/beranda'
         );
+
+        // Biar ESP32 bisa kirim data tanpa bawa-bawa token CSRF Laravel
+        $middleware->validateCsrfTokens(except: [
+            'api/simpan-data'
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
