@@ -100,10 +100,43 @@ class KontrolerKandang extends Controller
         ];
 
         // Validasi tipis-tipis biar datanya bener angka
-        if (!is_numeric($payload['gauge1'])) $payload['gauge1'] = 0;
-        if (!is_numeric($payload['gauge2'])) $payload['gauge2'] = 0;
-        if (!is_numeric($payload['gauge3'])) $payload['gauge3'] = 0;
-        if (!is_numeric($payload['gauge4'])) $payload['gauge4'] = 0;
+        if (!is_numeric($payload['gauge1']))
+            $payload['gauge1'] = 0;
+        if (!is_numeric($payload['gauge2']))
+            $payload['gauge2'] = 0;
+        if (!is_numeric($payload['gauge3']))
+            $payload['gauge3'] = 0;
+        if (!is_numeric($payload['gauge4']))
+            $payload['gauge4'] = 0;
+
+        // --- LOGIKA NOTIFIKASI EMAIL (GAS KE GMAIL!) ---
+        // Kita cek nih, apakah statusnya mengandung kata "Ganti!" (artinya air keruh parah)
+        if (str_contains($payload['item_teks'], 'Ganti!')) {
+
+            // Kita pake Cache buat nginget kapan terakhir kirim email (biar gak spam terus)
+            // Nama kuncinya 'terakhir_kirim_email_buruk'
+            $sudahKirim = \Illuminate\Support\Facades\Cache::get('terakhir_kirim_email_buruk');
+
+            if (!$sudahKirim) {
+                // Berarti belum kirim atau udah lewat 30 detik
+                // Langsung kirim email pake Mail class yang kita buat tadi
+                $emailTujuan = env('NOTIF_EMAIL_RECEIVER', 'email_anda@gmail.com');
+
+                try {
+                    \Illuminate\Support\Facades\Mail::to($emailTujuan)->send(new \App\Mail\NotifikasiKualitasAirBad($payload));
+
+                    // Kita simpen di Cache selama 30 detik (biar nunggu 30 detik baru bisa kirim lagi)
+                    \Illuminate\Support\Facades\Cache::put('terakhir_kirim_email_buruk', true, 10);
+                } catch (\Exception $e) {
+                    // Kalau gagal (misal internet mati atau smtp salah), kita catat aja tapi jangan bikin sistem error
+                    \Illuminate\Support\Facades\Log::error('Gagal kirim email: ' . $e->getMessage());
+                }
+            }
+        } else {
+            // Kalau airnya udah BERSIH (gak ada kata 'Ganti!'), 
+            // kita hapus Cache-nya biar pas nanti keruh lagi, bisa langsung kirim email tanpa nunggu
+            \Illuminate\Support\Facades\Cache::forget('terakhir_kirim_email_buruk');
+        }
 
         // Langsung hajar masukin ke database!
         $data = ModelKandang::create($payload);
