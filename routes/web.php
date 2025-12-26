@@ -14,16 +14,19 @@ Route::get('/', [App\Http\Controllers\KontrolerKandang::class, 'index'])->name('
 Route::middleware('auth')->group(function () {
     // Rute CRUD Admin (Buat ngelola data kandang)
     Route::resource('admin/kelola-data', App\Http\Controllers\KontrolerKandang::class)->names([
-        'index'   => 'admin.crud.index',
-        'create'  => 'admin.crud.create',
-        'store'   => 'admin.crud.store',
-        'edit'    => 'admin.crud.edit',
-        'update'  => 'admin.crud.update',
+        'index' => 'admin.crud.index',
+        'create' => 'admin.crud.create',
+        'store' => 'admin.crud.store',
+        'edit' => 'admin.crud.edit',
+        'update' => 'admin.crud.update',
         'destroy' => 'admin.crud.destroy',
     ]);
 
     // Halaman Beranda Admin
     Route::get('admin/beranda', [App\Http\Controllers\KontrolerKandang::class, 'adminIndex'])->name('admin.dashboard');
+
+    // Fitur Hapus Semua Data (Ludes Bang!)
+    Route::delete('admin/hapus-semua-data', [App\Http\Controllers\KontrolerKandang::class, 'hapusSemua'])->name('admin.crud.hapus_semua');
 });
 
 // PINTU MASUK DATA (API): Buat nyimpen data dari ESP32 atau Dashboard Web

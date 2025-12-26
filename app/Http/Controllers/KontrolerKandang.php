@@ -77,7 +77,14 @@ class KontrolerKandang extends Controller
         $item = ModelKandang::findOrFail($id);
         $item->delete();
 
-        return redirect()->route('admin.crud.index')->with('sukses', 'Data udah dihapus, bersih!');
+        return redirect()->route('admin.dashboard')->with('sukses', 'Data udah dihapus, bersih!');
+    }
+
+    // Fungsi buat hapus SEMUA data (Hati-hati, Bang!)
+    public function hapusSemua()
+    {
+        ModelKandang::truncate();
+        return redirect()->route('admin.dashboard')->with('sukses', 'Semua data udah ludes, Bang!');
     }
 
     /**
