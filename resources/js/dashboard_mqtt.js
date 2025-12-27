@@ -7,10 +7,10 @@ import SolidGauge from 'highcharts/modules/solid-gauge';
 try {
     const more = HighchartsMore.default || HighchartsMore;
     const gauge = SolidGauge.default || SolidGauge;
-    
+
     if (typeof more === 'function') more(Highcharts);
     if (typeof gauge === 'function') gauge(Highcharts);
-    
+
     console.log('✅ Library Highcharts berhasil di-load!');
 } catch (e) {
     console.error('❌ Gagal inisialisasi modul Highcharts:', e);
@@ -18,7 +18,7 @@ try {
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Dashboard Init...');
-    
+
     const gaugeOptions = {
         chart: {
             type: 'solidgauge',
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data: [0],
             dataLabels: {
                 format: '<div style="text-align:center"><span style="font-size:25px;color:#f8fafc">{y}</span><br/>' +
-                        '<span style="font-size:12px;color:#94a3b8">unit</span></div>'
+                    '<span style="font-size:12px;color:#94a3b8">unit</span></div>'
             }
         }]
     };
@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const gaugeConfigs = [
         { id: 'gauge-1', label: 'Suhu', max: 50, unit: '°C', inverse: false },
         { id: 'gauge-2', label: 'Volume', max: 1000, unit: 'ml', inverse: false },
+
         { id: 'gauge-3', label: 'Keruh', max: 150, unit: 'NTU', inverse: false },
         { id: 'gauge-4', label: 'Kualitas', max: 100, unit: '%', inverse: true }
     ];
@@ -91,18 +92,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 ];
 
                 const chart = Highcharts.chart(conf.id, Highcharts.merge(gaugeOptions, {
-                    yAxis: { 
-                        min: 0, 
+                    yAxis: {
+                        min: 0,
                         max: conf.max,
                         stops: customStops,
-                        title: { text: conf.label, style: { color: '#94a3b8' } } 
+                        title: { text: conf.label, style: { color: '#94a3b8' } }
                     },
                     series: [{
                         name: conf.label,
                         data: [0],
                         dataLabels: {
                             format: `<div style="text-align:center"><span style="font-size:20px;color:#f8fafc">{y}</span><br/>` +
-                                    `<span style="font-size:10px;color:#94a3b8">${conf.unit}</span></div>`
+                                `<span style="font-size:10px;color:#94a3b8">${conf.unit}</span></div>`
                         }
                     }]
                 }));
@@ -127,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // MQTT Connect
-    const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+    const client = mqtt.connect('wss://test.mosquitto.org:8081');
 
     client.on('connect', () => {
         console.log('📡 MQTT Online');
@@ -138,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     client.on('offline', () => updateStatusDot('status-mqtt-dot', 'offline'));
 
     let lastDeviceMessage = Date.now();
-    
+
     // Cek Device Status via Timeout (Kalau gak ada kabar 10 detik = offline)
     setInterval(() => {
         if (Date.now() - lastDeviceMessage > 10000) {
@@ -162,41 +163,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update Gauges
                 if (data.suhu !== undefined && gauges[0]) gauges[0].series[0].points[0].update(parseFloat(data.suhu));
                 if (data.volume !== undefined && gauges[1]) gauges[1].series[0].points[0].update(parseFloat(data.volume));
-                
+
                 let ntu = 0;
                 if (data.kekeruhan !== undefined && gauges[2]) {
                     ntu = parseFloat(data.kekeruhan);
                     gauges[2].series[0].points[0].update(ntu);
                 }
 
-                // Kualitas (%) = 100 - (ntu/1.5)
-                if (gauges[3]) {
-                    let qual = 100 - (ntu / 1.5);
+                // Kualitas (%) - Menggunakan hasil perhitungan Fuzzy dari Arduino
+                if (data.kualitas !== undefined && gauges[3]) {
+                    let qual = parseFloat(data.kualitas);
                     qual = Math.max(0, Math.min(100, Math.round(qual)));
                     gauges[3].series[0].points[0].update(qual);
                 }
 
-                // Update Kondisi Text
+
+                // Update Kondisi Text (Mengikuti Status dari Arduino)
                 const txt = document.getElementById('item-teks');
-                if (txt) {
-                    if (ntu < 30) {
-                        txt.innerText = "💧 Air Bersih (Mantap!)";
+                if (txt && data.item_teks) {
+                    const status = data.item_teks;
+                    txt.innerText = status;
+
+                    if (status === "Baik") {
+                        txt.innerText = "💧 " + status + " (Mantap!)";
                         txt.className = "text-2xl font-mono animate-pulse text-emerald-400";
-                    } else if (ntu < 80) {
-                        txt.innerText = "⚠️ Air Mulai Keruh (Waspada)";
+                    } else if (status === "Cukup") {
+                        txt.innerText = "⚠️ " + status + " (Waspada)";
                         txt.className = "text-2xl font-mono animate-pulse text-yellow-500";
-                    } else {
-                        txt.innerText = "🚫 Air Keruh Banget! (Ganti!)";
+                    } else if (status === "Buruk") {
+                        txt.innerText = "🚫 " + status + " (Ganti!)";
                         txt.className = "text-2xl font-mono animate-pulse text-red-500";
                     }
                 }
+
 
             } catch (e) { console.error('JSON Error:', e); }
         }
     });
 
     const slider = document.getElementById('buzzer-slider');
-    
+
     // Fungsi buat kirim data ke database Laravel
     const syncDataToDatabase = () => {
         const payload = {
@@ -213,16 +219,16 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
-        .then(res => res.json())
-        .then(data => console.log('✅ Data tersinkron ke DB:', data))
-        .catch(err => console.error('❌ Gagal sinkron ke DB:', err));
+            .then(res => res.json())
+            .then(data => console.log('✅ Data tersinkron ke DB:', data))
+            .catch(err => console.error('❌ Gagal sinkron ke DB:', err));
     };
 
     if (slider) {
         slider.addEventListener('change', (e) => {
             const status = e.target.checked ? 'ON' : 'OFF';
             client.publish('kandang/control/buzzer', status);
-            
+
             // Pas buzzer diubah, langsung lapor ke database biar dicatet
             syncDataToDatabase();
         });
@@ -231,10 +237,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- PENGATURAN WAKTU SIMPAN (AUTO-SYNC) ---
     // Ubah angka 10000 di bawah ini kalau mau ganti durasi simpan datanya.
     // 10000 = 10 detik, 30000 = 30 detik, dst.
-    const WAKTU_SIMPAN = 10000; 
+    const WAKTU_SIMPAN = 10000;
 
     setInterval(() => {
-        console.log(`🔄 [${WAKTU_SIMPAN/1000}s] Sinkronisasi data otomatis ke database...`);
+        console.log(`🔄 [${WAKTU_SIMPAN / 1000}s] Sinkronisasi data otomatis ke database...`);
         syncDataToDatabase();
     }, WAKTU_SIMPAN);
 });
