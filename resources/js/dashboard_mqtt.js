@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- PENGATURAN WAKTU SIMPAN (AUTO-SYNC) ---
     // Ubah angka 10000 di bawah ini kalau mau ganti durasi simpan datanya.
     // 10000 = 10 detik, 30000 = 30 detik, dst.
-    const WAKTU_SIMPAN = 10000;
+    const WAKTU_SIMPAN = 30000;
 
     setInterval(() => {
         console.log(`🔄 [${WAKTU_SIMPAN / 1000}s] Sinkronisasi data otomatis ke database...`);
