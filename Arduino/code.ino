@@ -51,7 +51,7 @@ float min_volume = 0.0;
 float max_kekeruhan = 150.0;
 
 // Google Sheets
-const char* webhookURL = "https://script.google.com/macros/s/AKfycbzpC2UYVdBsEMowbSV_aQPjZP7ixR4xyStcQIrgAjjgWmhAk8pEC6c0kOB3-Pt72ezu/exec";
+// const char* webhookURL = "https://script.google.com/macros/s/AKfycbzpC2UYVdBsEMowbSV_aQPjZP7ixR4xyStcQIrgAjjgWmhAk8pEC6c0kOB3-Pt72ezu/exec";
 
 // [SUGGESTION MQTT Config Updated]
 const char* mqtt_server = "test.mosquitto.org"; // Sesuai dashboard_mqtt.js
@@ -254,18 +254,18 @@ void kontrolBuzzer() {
 
 
 // -------------------- Kirim ke Google Sheets --------------------
-void kirimSheets() {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    String encodedStatus = status_kualitas;
-    encodedStatus.replace(" ", "%20");
-    encodedStatus.replace(":", "%3A");
-    String url = String(webhookURL) + "?suhu=" + suhu + "&volume=" + String(volume, 2) + 
-                 "&kekeruhan=" + kekeruhan + "&kualitas=" + kualitas + "&status=" + encodedStatus;
-    Serial.print("URL Sheets: "); Serial.println(url);
-    http.begin(url); http.GET(); http.end();
-  }
-}
+// void kirimSheets() {
+//   if (WiFi.status() == WL_CONNECTED) {
+//     HTTPClient http;
+//     String encodedStatus = status_kualitas;
+//     encodedStatus.replace(" ", "%20");
+//     encodedStatus.replace(":", "%3A");
+//     String url = String(webhookURL) + "?suhu=" + suhu + "&volume=" + String(volume, 2) + 
+//                  "&kekeruhan=" + kekeruhan + "&kualitas=" + kualitas + "&status=" + encodedStatus;
+//     Serial.print("URL Sheets: "); Serial.println(url);
+//     http.begin(url); http.GET(); http.end();
+//   }
+// }
 
 void loop() {
   // [ORIGINAL Loop Body moved to Tasks]

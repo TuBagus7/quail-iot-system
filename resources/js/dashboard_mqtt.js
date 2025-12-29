@@ -128,7 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // MQTT Connect
-    const client = mqtt.connect('wss://test.mosquitto.org:8081');
+
+    const client = mqtt.connect('ws://broker.hivemq.com:8000/mqtt')
 
     client.on('connect', () => {
         console.log('📡 MQTT Online');
